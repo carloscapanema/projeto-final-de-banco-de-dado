@@ -1,0 +1,108 @@
+-- =====================================================
+-- BANCO DE DADOS E-COMMERCE
+-- Convertido do Modelo Conceitual (BRModelo)
+-- =====================================================
+
+CREATE DATABASE IF NOT EXISTS ecommerce;
+USE ecommerce;
+
+-- =====================================================
+-- TABELA: Cliente
+-- =====================================================
+CREATE TABLE Cliente (
+    id          INT             NOT NULL AUTO_INCREMENT,
+    nome        VARCHAR(100)    NOT NULL,
+    senha       VARCHAR(100)    NOT NULL,
+    celular     VARCHAR(20),
+    cpf         VARCHAR(14)     NOT NULL,
+    email       VARCHAR(100)    NOT NULL,
+    
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cliente_cpf (cpf),
+    UNIQUE KEY uk_cliente_email (email)
+);
+
+-- =====================================================
+-- TABELA: Endereco
+-- Relacionamento: Cliente (1,1) ----< Possui >---- (1,n) Endereco
+-- =====================================================
+CREATE TABLE Endereco (
+    id          INT             NOT NULL AUTO_INCREMENT,
+    rua         VARCHAR(150)    NOT NULL,
+    numero      VARCHAR(20)     NOT NULL,
+    bairro      VARCHAR(80)     NOT NULL,
+    cidade      VARCHAR(80)     NOT NULL,
+    estado      CHAR(2)         NOT NULL,
+    cliente_id  INT             NOT NULL,
+    
+    PRIMARY KEY (id),
+    CONSTRAINT fk_endereco_cliente 
+        FOREIGN KEY (cliente_id) REFERENCES Cliente(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+-- =====================================================
+-- TABELA: Produto
+-- =====================================================
+CREATE TABLE Produto (
+    id          INT             NOT NULL AUTO_INCREMENT,
+    nome        VARCHAR(150)    NOT NULL,
+    descricao   TEXT,
+    quantidade  INT             NOT NULL DEFAULT 0,
+    preco       DECIMAL(10,2)   NOT NULL,
+    categoria   VARCHAR(80),
+    
+    PRIMARY KEY (id)
+);
+
+-- =====================================================
+-- TABELA: Compra
+-- Relacionamentos:
+--   Cliente (1,1) ----< Faz >---- (0,n) Compra
+--   Compra  (0,n) ----< Entrega >---- (1,1) Endereco
+-- =====================================================
+CREATE TABLE Compra (
+    id                  INT             NOT NULL AUTO_INCREMENT,
+    data                DATETIME        NOT NULL,
+    forma_pagamento     VARCHAR(50)     NOT NULL,
+    valor_total         DECIMAL(10,2)   NOT NULL,
+    cliente_id          INT             NOT NULL,
+    endereco_id         INT             NOT NULL,   -- Endereço de entrega
+    
+    PRIMARY KEY (id),
+    
+    CONSTRAINT fk_compra_cliente 
+        FOREIGN KEY (cliente_id) REFERENCES Cliente(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+        
+    CONSTRAINT fk_compra_endereco 
+        FOREIGN KEY (endereco_id) REFERENCES Endereco(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+-- =====================================================
+-- TABELA: ItemCompra (tabela associativa)
+-- Relacionamento: Compra (0,n) ----< Possui >---- (1,n) Produto
+-- Atributos do relacionamento: quantidade, valor_unitario
+-- =====================================================
+CREATE TABLE ItemCompra (
+    compra_id       INT             NOT NULL,
+    produto_id      INT             NOT NULL,
+    quantidade      INT             NOT NULL,
+    valor_unitario  DECIMAL(10,2)   NOT NULL,
+    
+    PRIMARY KEY (compra_id, produto_id),
+    
+    CONSTRAINT fk_item_compra 
+        FOREIGN KEY (compra_id) REFERENCES Compra(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+        
+    CONSTRAINT fk_item_produto 
+        FOREIGN KEY (produto_id) REFERENCES Produto(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
